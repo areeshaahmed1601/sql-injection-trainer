@@ -1,0 +1,9 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.2
+joblib==1.4.2
+sqlparse==0.4.4
+python-multipart==0.0.6
+aiofiles==23.2.1
