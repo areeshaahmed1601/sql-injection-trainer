@@ -1,7 +1,11 @@
+# challenges.py - SIMPLE VERSION (No numpy dependencies)
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import List, Optional
-from app.config import ml_detector, db_manager
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 router = APIRouter()
 
@@ -14,7 +18,23 @@ class ChallengeSubmission(BaseModel):
 async def submit_challenge(submission: ChallengeSubmission, background_tasks: BackgroundTasks):
     """Submit a challenge solution"""
     try:
+        print(f"🎯 Processing challenge {submission.challenge_id}")
+        print(f"📝 Query: {submission.query}")
+        
+        # Import inside function to avoid circular imports
+        from app.config import ml_detector, db_manager
+        
+        # Use ML detector to check if the query is malicious
         is_malicious, confidence, patterns = await ml_detector.predict(submission.query)
+        
+        print(f"🔍 Raw ML Detection - Malicious: {is_malicious}, Confidence: {confidence}")
+        
+        # SIMPLE AND RELIABLE CONVERSION TO NATIVE TYPES
+        is_malicious = bool(is_malicious)
+        confidence = float(confidence)
+        patterns = list(patterns) if patterns else []
+        
+        print(f"✅ Converted ML Detection - Malicious: {is_malicious}, Confidence: {confidence}")
         
         # Challenge-specific validation
         challenge_solutions = {
@@ -43,18 +63,25 @@ async def submit_challenge(submission: ChallengeSubmission, background_tasks: Ba
             patterns
         )
         
-        return {
-            "challenge_id": submission.challenge_id,
-            "is_malicious": is_malicious,
-            "completed": completed,
-            "score": score,
-            "confidence": confidence,
+        # RETURN ONLY NATIVE PYTHON TYPES
+        response_data = {
+            "challenge_id": int(submission.challenge_id),
+            "is_malicious": bool(is_malicious),
+            "completed": bool(completed),
+            "score": int(score),
+            "confidence": float(confidence),
             "message": "🎉 Challenge completed successfully!" if completed else "❌ Keep trying! Your solution needs to match the challenge requirements.",
-            "detected_patterns": patterns,
-            "required_patterns": required_patterns
+            "detected_patterns": list(patterns),
+            "required_patterns": list(required_patterns)
         }
         
+        print(f"✅ Sending response: {response_data}")
+        return response_data
+        
     except Exception as e:
+        print(f"❌ Challenge error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Challenge error: {str(e)}")
 
 @router.get("/challenge-info")

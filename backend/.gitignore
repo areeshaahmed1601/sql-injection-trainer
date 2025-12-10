@@ -1,1 +1,9 @@
 datasets/
+venv/
+__pycache__/
+*.pyc
+datasets/
+.DS_Store
+backend/datasets/
+backend\app\__pycache__/
+backend\app\routes\__pycache__/

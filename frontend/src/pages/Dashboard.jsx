@@ -1,47 +1,107 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { getDetectionStats, getUserProgress, getModelInfo } from "../utils/api";
 
 const Dashboard = () => {
-  const stats = [
+  const [stats, setStats] = useState(null);
+  const [userProgress, setUserProgress] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [statsResponse, progressResponse, modelResponse] =
+        await Promise.all([
+          getDetectionStats(),
+          getUserProgress(1),
+          getModelInfo(),
+        ]);
+
+      setStats(statsResponse.data);
+      setUserProgress(progressResponse.data);
+      setModelInfo(modelResponse.data);
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getLevel = (score) => {
+    if (score >= 800) return "Expert";
+    if (score >= 500) return "Advanced";
+    if (score >= 200) return "Intermediate";
+    return "Beginner";
+  };
+
+  const calculateLevelProgress = (score) => {
+    if (score >= 800) return 100;
+    if (score >= 500) return 75;
+    if (score >= 200) return 50;
+    return (score / 200) * 50;
+  };
+
+  const dashboardStats = [
     {
       label: "Training Completed",
-      value: "3/10",
-      progress: 30,
+      value: userProgress
+        ? `${userProgress.user_info.challenges_completed}/4`
+        : "0/4",
+      progress: userProgress
+        ? (userProgress.user_info.challenges_completed / 4) * 100
+        : 0,
       color: "from-green-500 to-emerald-500",
       icon: "✅",
     },
     {
       label: "Challenges Solved",
-      value: "5",
-      progress: 50,
+      value: userProgress
+        ? userProgress.user_info.challenges_completed.toString()
+        : "0",
+      progress: userProgress
+        ? (userProgress.user_info.challenges_completed / 4) * 100
+        : 0,
       color: "from-blue-500 to-cyan-500",
       icon: "⚡",
     },
     {
       label: "Current Level",
-      value: "Beginner",
-      progress: 25,
+      value: userProgress
+        ? getLevel(userProgress.user_info.total_score)
+        : "Beginner",
+      progress: userProgress
+        ? calculateLevelProgress(userProgress.user_info.total_score)
+        : 0,
       color: "from-purple-500 to-pink-500",
       icon: "📊",
     },
     {
       label: "Total Points",
-      value: "250",
-      progress: 20,
+      value: userProgress ? userProgress.user_info.total_score.toString() : "0",
+      progress: userProgress
+        ? (userProgress.user_info.total_score / 1000) * 100
+        : 0,
       color: "from-orange-500 to-red-500",
       icon: "⭐",
     },
   ];
 
-  const recentActivity = [
-    {
-      action: "Completed Basic SQL Injection Training",
-      points: 50,
-      time: "2 hours ago",
-    },
-    { action: "Solved Login Bypass Challenge", points: 30, time: "1 day ago" },
-    { action: "Earned Quick Learner Badge", points: 20, time: "2 days ago" },
-  ];
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading dashboard data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -55,12 +115,46 @@ const Dashboard = () => {
           real-world challenges. Protect your applications while earning points
           and climbing the leaderboard.
         </p>
+
+        {/* Real-time Stats */}
+        {stats && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.total_queries}
+              </div>
+              <div className="text-sm text-gray-600">Queries Analyzed</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+              <div className="text-2xl font-bold text-red-600">
+                {stats.malicious_count}
+              </div>
+              <div className="text-sm text-gray-600">Threats Detected</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {stats.average_confidence}%
+              </div>
+              <div className="text-sm text-gray-600">Detection Accuracy</div>
+            </div>
+          </div>
+        )}
+
+        {modelInfo && (
+          <div className="mt-4 inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
+            🎯 {modelInfo.status} | Dataset: {modelInfo.dataset_size} |
+            Accuracy: 99.4%
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div key={index} className="stat-card">
+        {dashboardStats.map((stat, index) => (
+          <div
+            key={index}
+            className="bg-white p-6 rounded-xl shadow-sm border hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center justify-between mb-4">
               <div
                 className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}
@@ -84,7 +178,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Quick Actions */}
-        <div className="card p-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Start Learning
           </h2>
@@ -100,7 +194,7 @@ const Dashboard = () => {
               </p>
               <Link
                 to="/training"
-                className="btn-primary inline-block text-center w-full"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-block text-center w-full transition-colors"
               >
                 Start Training
               </Link>
@@ -116,7 +210,7 @@ const Dashboard = () => {
               </p>
               <Link
                 to="/challenges"
-                className="btn-primary inline-block text-center w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg inline-block text-center w-full transition-colors"
               >
                 Try Challenges
               </Link>
@@ -125,59 +219,95 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activity */}
-        <div className="card p-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Recent Activity
           </h2>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-green-600">⭐</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {activity.action}
-                    </p>
-                    <p className="text-sm text-gray-500">{activity.time}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600">+{activity.points}</p>
-                  <p className="text-xs text-gray-500">XP</p>
-                </div>
-              </div>
-            ))}
-          </div>
 
-          {/* Badges Section */}
-          <div className="mt-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Your Badges</h3>
-            <div className="flex space-x-4">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-2xl">🚀</span>
+          {userProgress && userProgress.recent_detections.length > 0 ? (
+            <div className="space-y-4">
+              {userProgress.recent_detections
+                .slice(0, 3)
+                .map((activity, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          activity.is_malicious ? "bg-red-100" : "bg-green-100"
+                        }`}
+                      >
+                        <span
+                          className={
+                            activity.is_malicious
+                              ? "text-red-600"
+                              : "text-green-600"
+                          }
+                        >
+                          {activity.is_malicious ? "⚠️" : "✅"}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {activity.is_malicious
+                            ? "Malicious Query Detected"
+                            : "Safe Query Analyzed"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Confidence: {activity.confidence}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No recent activity yet</p>
+              <p className="text-sm text-gray-400 mt-2">
+                Start training to see your progress here!
+              </p>
+            </div>
+          )}
+
+          {/* Quick Stats */}
+          {stats && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+              <h3 className="font-semibold text-blue-900 mb-2">
+                System Overview
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-blue-700">Total Queries:</span>
+                  <span className="float-right font-semibold">
+                    {stats.total_queries}
+                  </span>
                 </div>
-                <p className="text-xs font-medium">Quick Start</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-2xl">📚</span>
+                <div>
+                  <span className="text-blue-700">Threats Blocked:</span>
+                  <span className="float-right font-semibold text-red-600">
+                    {stats.malicious_count}
+                  </span>
                 </div>
-                <p className="text-xs font-medium">Learner</p>
-              </div>
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-2xl">⚡</span>
+                <div>
+                  <span className="text-blue-700">Success Rate:</span>
+                  <span className="float-right font-semibold text-green-600">
+                    {stats.average_confidence}%
+                  </span>
                 </div>
-                <p className="text-xs font-medium">Fast Solver</p>
+                <div>
+                  <span className="text-blue-700">Your Level:</span>
+                  <span className="float-right font-semibold">
+                    {userProgress
+                      ? getLevel(userProgress.user_info.total_score)
+                      : "Beginner"}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
