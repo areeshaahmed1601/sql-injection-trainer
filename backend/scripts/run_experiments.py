@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""
+Main experiment runner for SQL injection detection research.
+Executes all experiments required for thesis validation.
+"""
+
+import sys
+import logging
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from research.experiments.multi_dataset_testing import MultiDatasetEvaluator
+from research.experiments.adversarial_robustness import AdversarialRobustnessTester
+from research.experiments.explainability_analysis import ModelExplainability
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('research/results/experiment_log.txt'),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+def run_all_experiments():
+    """Execute all research experiments"""
+    logger.info("="*80)
+    logger.info("SQL INJECTION DETECTION RESEARCH EXPERIMENTS")
+    logger.info("="*80)
+    
+    all_results = {}
+    
+    try:
+        # 1. Multi-Dataset Testing
+        logger.info("\n" + "="*60)
+        logger.info("EXPERIMENT 1: MULTI-DATASET TESTING")
+        logger.info("="*60)
+        
+        multi_dataset_evaluator = MultiDatasetEvaluator()
+        multi_dataset_results = multi_dataset_evaluator.run_complete_experiment()
+        all_results['multi_dataset'] = multi_dataset_results
+        
+        # 2. Adversarial Robustness
+        logger.info("\n" + "="*60)
+        logger.info("EXPERIMENT 2: ADVERSARIAL ROBUSTNESS")
+        logger.info("="*60)
+        
+        # Load model and detector
+        from src.ml_detector import SQLInjectionMLDetector
+        import joblib
+        
+        detector = SQLInjectionMLDetector()
+        model = joblib.load("models/sql_injection_model.pkl")
+        
+        adversarial_tester = AdversarialRobustnessTester(model, detector)
+        adversarial_results = adversarial_tester.run_complete_experiment()
+        all_results['adversarial'] = adversarial_results
+        
+        # 3. Explainability Analysis
+        logger.info("\n" + "="*60)
+        logger.info("EXPERIMENT 3: EXPLAINABILITY ANALYSIS")
+        logger.info("="*60)
+        
+        explainability = ModelExplainability(model, detector)
+        explainability_results = explainability.run_complete_analysis()
+        all_results['explainability'] = explainability_results
+        
+        # Generate final report
+        logger.info("\n" + "="*60)
+        logger.info("GENERATING FINAL REPORT")
+        logger.info("="*60)
+        
+        generate_final_report(all_results)
+        
+        logger.info("\n" + "="*80)
+        logger.info("✅ ALL EXPERIMENTS COMPLETED SUCCESSFULLY!")
+        logger.info("="*80)
+        
+    except Exception as e:
+        logger.error(f"❌ Experiment failed: {e}", exc_info=True)
+        sys.exit(1)
+
+def generate_final_report(results):
+    """Generate comprehensive research report"""
+    from datetime import datetime
+    
+    report_path = Path("research/results/final_experiment_report.md")
+    
+    with open(report_path, 'w') as f:
+        f.write("# SQL Injection Detection Research Report\n\n")
+        f.write(f"*Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*\n\n")
+        
+        # Multi-Dataset Results
+        if 'multi_dataset' in results:
+            f.write("## 1. Multi-Dataset Testing Results\n\n")
+            md_results = results['multi_dataset']
+            
+            f.write("### Performance Across Datasets\n")
+            f.write("| Dataset | Accuracy | Precision | Recall | F1-Score |\n")
+            f.write("|---------|----------|-----------|--------|----------|\n")
+            
+            for name, result in md_results.get('evaluation_results', {}).items():
+                metrics = result['metrics']
+                f.write(f"| {name} | {metrics['accuracy']:.4f} | {metrics['precision']:.4f} | {metrics['recall']:.4f} | {metrics['f1_score']:.4f} |\n")
+            
+            f.write("\n### Generalization Analysis\n")
+            for name, analysis in md_results.get('generalization_analysis', {}).items():
+                f.write(f"- **{name}**: {analysis['retention_percentage']:.1f}% retention ({analysis['interpretation']})\n")
+        
+        # Adversarial Robustness Results
+        if 'adversarial' in results:
+            f.write("\n## 2. Adversarial Robustness Results\n\n")
+            
+            adv_results = results['adversarial']
+            if 'overall_robustness' in adv_results:
+                robustness = adv_results['overall_robustness']
+                f.write(f"- **Overall Robustness Score**: {robustness.get('score', 0):.3f}\n")
+                f.write(f"- **Vulnerable Techniques**: {', '.join(robustness.get('vulnerable_techniques', []))}\n")
+        
+        f.write("\n---\n")
+        f.write("*Report generated by SQL Injection Detection Research Framework*\n")
+    
+    logger.info(f"📄 Final report generated: {report_path}")
+
+if __name__ == "__main__":
+    run_all_experiments()
