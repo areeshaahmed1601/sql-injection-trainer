@@ -1,0 +1,40 @@
+================================================================================
+THESIS EXPERIMENT REPORT: SQL INJECTION DETECTION SYSTEM
+================================================================================
+
+Generated: 2025-12-12 19:24:20
+Researcher: Areesha Ahmed
+Institution: National University of Computer & Emerging Sciences
+
+1. DATASET STATISTICS
+----------------------------------------
+Total queries: 31,705
+Benign queries: 19,896 (62.8%)
+Malicious queries: 11,809 (37.2%)
+
+2. MODEL PERFORMANCE
+----------------------------------------
+Training accuracy: 99.4%
+Training samples: 8,000
+Testing samples: 2,000
+
+3. FEATURE IMPORTANCE (Top 5)
+----------------------------------------
+1. Tautology Pattern: 0.2096
+2. Special Char Count: 0.1568
+3. Space Count: 0.1254
+4. Comment Pattern: 0.1026
+5. Comment Present: 0.0843
+
+4. DETECTION ACCURACY
+----------------------------------------
+Overall accuracy: 93.33%
+Correct predictions: 14/15
+Benign query accuracy: 80.00%
+Malicious query accuracy: 100.00%
+
+5. PERFORMANCE METRICS
+----------------------------------------
+Average detection time: 34.23 ms
+Fastest detection: 33.11 ms
+Slowest detection: 36.51 ms

@@ -1,0 +1,341 @@
+{
+  "experiment_info": {
+    "title": "SQL Injection Detection System Experiments",
+    "timestamp": "2025-12-12T19:24:20.142457",
+    "researcher": "Areesha Ahmed",
+    "institution": "National University of Computer & Emerging Sciences",
+    "thesis_title": "Machine Learning-Driven SQL Injection Detection and Interactive Educational Platform"
+  },
+  "dataset_statistics": {
+    "total_queries": 31705,
+    "benign_queries": 19896,
+    "malicious_queries": 11809,
+    "dataset_path": "datasets/combined_sql_dataset.csv"
+  },
+  "model_info": {
+    "model_type": "Random Forest Classifier",
+    "training_accuracy": 0.994,
+    "training_samples": 8000,
+    "testing_samples": 2000,
+    "feature_count": 22,
+    "parameters": {
+      "n_estimators": 150,
+      "max_depth": 20,
+      "random_state": 42
+    }
+  },
+  "feature_importance": [
+    {
+      "rank": 1,
+      "feature": "Tautology Pattern",
+      "importance": 0.20963644126340836
+    },
+    {
+      "rank": 2,
+      "feature": "Special Char Count",
+      "importance": 0.1567758384779758
+    },
+    {
+      "rank": 3,
+      "feature": "Space Count",
+      "importance": 0.12537631396631221
+    },
+    {
+      "rank": 4,
+      "feature": "Comment Pattern",
+      "importance": 0.10261694932343828
+    },
+    {
+      "rank": 5,
+      "feature": "Comment Present",
+      "importance": 0.08425211418397363
+    },
+    {
+      "rank": 6,
+      "feature": "Equals Present",
+      "importance": 0.08294006581021347
+    },
+    {
+      "rank": 7,
+      "feature": "Quote Present",
+      "importance": 0.04378222197369904
+    },
+    {
+      "rank": 8,
+      "feature": "Query Length",
+      "importance": 0.042365132389821654
+    },
+    {
+      "rank": 9,
+      "feature": "Single Quote Count",
+      "importance": 0.03234588450938795
+    },
+    {
+      "rank": 10,
+      "feature": "Keyword Count",
+      "importance": 0.02517834570520116
+    },
+    {
+      "rank": 11,
+      "feature": "Union Pattern",
+      "importance": 0.018894464145221064
+    },
+    {
+      "rank": 12,
+      "feature": "SELECT Present",
+      "importance": 0.016287653636389926
+    },
+    {
+      "rank": 13,
+      "feature": "Double Quote Count",
+      "importance": 0.015355158790158484
+    },
+    {
+      "rank": 14,
+      "feature": "UNION Present",
+      "importance": 0.013052385209996185
+    },
+    {
+      "rank": 15,
+      "feature": "OR Present",
+      "importance": 0.012617765547018931
+    }
+  ],
+  "detection_accuracy": {
+    "overall_accuracy": 0.9333333333333333,
+    "total_tests": 15,
+    "correct_predictions": 14,
+    "benign_accuracy": 0.8,
+    "malicious_accuracy": 1.0,
+    "detailed_results": [
+      {
+        "query": "SELECT * FROM users WHERE id = 1",
+        "description": "Simple SELECT query",
+        "expected": "benign",
+        "predicted": "benign",
+        "confidence": 3.348388215460768,
+        "correct": true,
+        "patterns_detected": []
+      },
+      {
+        "query": "INSERT INTO products (name, price) VALUES ('laptop...",
+        "description": "Normal INSERT",
+        "expected": "benign",
+        "predicted": "malicious",
+        "confidence": 43.01301982159789,
+        "correct": false,
+        "patterns_detected": []
+      },
+      {
+        "query": "UPDATE users SET last_login = NOW() WHERE username...",
+        "description": "Normal UPDATE",
+        "expected": "benign",
+        "predicted": "benign",
+        "confidence": 4.3711790536504225,
+        "correct": true,
+        "patterns_detected": []
+      },
+      {
+        "query": "DELETE FROM sessions WHERE expires_at < NOW()",
+        "description": "Normal DELETE",
+        "expected": "benign",
+        "predicted": "benign",
+        "confidence": 15.505873177304615,
+        "correct": true,
+        "patterns_detected": []
+      },
+      {
+        "query": "admin' OR '1'='1'",
+        "description": "Basic tautology attack",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 83.48266666666667,
+        "correct": true,
+        "patterns_detected": [
+          "tautology: ['\\\"\\d]\\s*=\\s*['\\\"\\d]"
+        ]
+      },
+      {
+        "query": "admin' OR 1=1 --",
+        "description": "Tautology with comment",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 88.0,
+        "correct": true,
+        "patterns_detected": [
+          "tautology: OR\\s*['\\\"\\d]\\s*=\\s*['\\\"\\d]",
+          "comment_attack: --"
+        ]
+      },
+      {
+        "query": "1 UNION SELECT username, password FROM users",
+        "description": "Union-based attack",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 77.36395357178857,
+        "correct": true,
+        "patterns_detected": [
+          "union_attack: UNION\\s+SELECT"
+        ]
+      },
+      {
+        "query": "1; DROP TABLE users --",
+        "description": "Stacked query attack",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 85.6481114678416,
+        "correct": true,
+        "patterns_detected": [
+          "comment_attack: --",
+          "stacked_queries: ;\\s*(DROP|DELETE|UPDATE|INSERT)"
+        ]
+      },
+      {
+        "query": "1 AND SLEEP(5) --",
+        "description": "Time-based blind SQLi",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 87.47931488801055,
+        "correct": true,
+        "patterns_detected": [
+          "comment_attack: --",
+          "time_delay: SLEEP\\s*\\("
+        ]
+      },
+      {
+        "query": "1' AND (SELECT * FROM (SELECT(SLEEP(3)))a) --",
+        "description": "Advanced time-based",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 88.0,
+        "correct": true,
+        "patterns_detected": [
+          "comment_attack: --",
+          "time_delay: SLEEP\\s*\\("
+        ]
+      },
+      {
+        "query": "admin'/**/OR/**/'1'='1'",
+        "description": "Obfuscated with comments",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 86.30204081632652,
+        "correct": true,
+        "patterns_detected": [
+          "tautology: ['\\\"\\d]\\s*=\\s*['\\\"\\d]",
+          "comment_attack: \\/\\*"
+        ]
+      },
+      {
+        "query": "1'%20UNION%20SELECT%201,2,3",
+        "description": "URL-encoded attack",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 61.659042537654365,
+        "correct": true,
+        "patterns_detected": [
+          "union_attack: UNION.*SELECT"
+        ]
+      },
+      {
+        "query": "admin' OR CHAR(49)=CHAR(49) --",
+        "description": "Char function obfuscation",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 84.0,
+        "correct": true,
+        "patterns_detected": [
+          "comment_attack: --"
+        ]
+      },
+      {
+        "query": "SELECT * FROM information_schema.tables",
+        "description": "System table query (benign)",
+        "expected": "benign",
+        "predicted": "benign",
+        "confidence": 0.8698275967887916,
+        "correct": true,
+        "patterns_detected": []
+      },
+      {
+        "query": "1 UNION SELECT table_name FROM information_schema....",
+        "description": "Schema extraction",
+        "expected": "malicious",
+        "predicted": "malicious",
+        "confidence": 62.11057961041237,
+        "correct": true,
+        "patterns_detected": [
+          "union_attack: UNION\\s+SELECT"
+        ]
+      }
+    ]
+  },
+  "performance_metrics": {
+    "average_detection_time_ms": 34.2263180000009,
+    "min_detection_time_ms": 33.11440000034054,
+    "max_detection_time_ms": 36.50569000019459,
+    "queries_per_second": 29.217282443293307
+  },
+  "adversarial_robustness": {
+    "robustness_score": 1.0,
+    "correct_detections": 5,
+    "total_tests": 5,
+    "detailed_results": [
+      {
+        "technique": "Comment injection",
+        "original_detected": true,
+        "obfuscated_detected": true,
+        "original_confidence": 83.48266666666667,
+        "obfuscated_confidence": 86.30204081632652,
+        "correct": true
+      },
+      {
+        "technique": "URL encoding",
+        "original_detected": true,
+        "obfuscated_detected": true,
+        "original_confidence": 83.48266666666667,
+        "obfuscated_confidence": 82.1877157239045,
+        "correct": true
+      },
+      {
+        "technique": "Char function",
+        "original_detected": true,
+        "obfuscated_detected": true,
+        "original_confidence": 83.48266666666667,
+        "obfuscated_confidence": 68.45935458223694,
+        "correct": true
+      },
+      {
+        "technique": "Comment separation",
+        "original_detected": true,
+        "obfuscated_detected": true,
+        "original_confidence": 69.86518835009547,
+        "obfuscated_confidence": 87.96521739130435,
+        "correct": true
+      },
+      {
+        "technique": "Newline encoding",
+        "original_detected": true,
+        "obfuscated_detected": true,
+        "original_confidence": 69.86518835009547,
+        "obfuscated_confidence": 61.843373472485304,
+        "correct": true
+      }
+    ]
+  },
+  "experiment_conclusions": {
+    "key_findings": [
+      "Model achieves 93.33% overall detection accuracy",
+      "Most important feature: Tautology Pattern",
+      "Average detection time: 34.23 ms",
+      "Adversarial robustness: 100.00%",
+      "Successfully detects 100.00% of malicious queries"
+    ],
+    "research_contributions": [
+      "Comprehensive 22-feature engineering approach",
+      "Real-time detection capability (<100ms)",
+      "Robust performance across various SQL injection types",
+      "Production-ready implementation with educational integration"
+    ]
+  }
+}

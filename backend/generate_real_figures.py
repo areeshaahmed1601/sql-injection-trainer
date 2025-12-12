@@ -118,7 +118,7 @@ def get_real_console_results():
     return real_results
 
 def generate_real_figure_1(real_data):
-    """Figure 1: Your REAL accuracy results"""
+    """Figure 1: REAL accuracy results"""
     print("\n📈 Generating Figure 1: Real Accuracy Results...")
     
     plt.figure(figsize=(10, 6))
@@ -134,7 +134,7 @@ def generate_real_figure_1(real_data):
     
     bars = plt.bar(categories, accuracies, color=colors)
     plt.ylabel('Accuracy', fontsize=12)
-    plt.title('Your REAL Detection Accuracy Results', fontsize=14, fontweight='bold')
+    plt.title(' REAL Detection Accuracy Results', fontsize=14, fontweight='bold')
     plt.ylim([0.7, 1.05])
     
     # Add value labels
@@ -178,7 +178,7 @@ def generate_real_figure_2(real_data):
     ax2.set_ylabel('Queries/Second (scaled)', color='green', fontsize=12)
     ax2.set_ylim([0, 35])
     
-    plt.title('Your REAL Performance Metrics', fontsize=14, fontweight='bold')
+    plt.title('Performance Metrics', fontsize=14, fontweight='bold')
     
     # Add value labels
     for i, (bar, val) in enumerate(zip(bars, values[:2])):

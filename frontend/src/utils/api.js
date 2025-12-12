@@ -31,9 +31,24 @@ api.interceptors.response.use(
   }
 );
 
-export const checkSQLInjection = async (query) => {
+export const checksqlInjection = async (query) => {
   try {
     const response = await api.post("/detect", {
+      query: query,
+      context: "training",
+    });
+    return response;
+  } catch (error) {
+    console.error("Detection API Error:", error);
+    throw error;
+  }
+};
+
+// Add this function if not present
+export const checkSQLInjection = async (query) => {
+  try {
+    const response = await api.post("/check-sql", {
+      // Changed from "/detect" to "/check-sql"
       query: query,
       context: "training",
     });
